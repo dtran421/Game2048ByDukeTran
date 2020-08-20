@@ -220,4 +220,13 @@ public class State implements GameState {
 		return score;
 	}
 
+	public boolean equals(State compState) {
+		// TODO: implement equals method
+		return false;
+	}
+	
+	public int hashCode() {
+		// TODO: implement hashcode method
+		return 0;
+	}
 }
