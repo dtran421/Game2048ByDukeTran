@@ -1,5 +1,6 @@
 package edu.wm.cs.cs301.game2048;
 
+import java.util.Arrays;
 import java.util.Stack;
 
 public class State implements GameState {
@@ -11,11 +12,16 @@ public class State implements GameState {
 	}
 	
 	public State(State currentState) {
-		board = currentState.getBoard();
+		fillBoard(currentState.board);
 	}
 	
-	public int[] getBoard() {
-		return board;
+	private void fillBoard(int[] newBoard) {
+		board = new int[16];
+		int idx = 0;
+		for (int num: newBoard) {
+			board[idx] = num;
+			idx++;
+		}
 	}
 
 	@Override
@@ -220,13 +226,24 @@ public class State implements GameState {
 		return score;
 	}
 
-	public boolean equals(State compState) {
-		// TODO: implement equals method
-		return false;
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		
+		State compState = (State) obj;
+		if (!Arrays.equals(board, compState.board))
+			return false;
+		return true;
 	}
-	
+
 	public int hashCode() {
-		// TODO: implement hashcode method
-		return 0;
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(board);
+		return result;
 	}
 }
