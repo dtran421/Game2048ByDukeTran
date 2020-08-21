@@ -31,6 +31,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.HashMap;
 import java.util.Random;
 
 /**
@@ -335,6 +336,7 @@ public class Game2048 extends JPanel {
 				  			// pick a move
 				  			Random random = new Random();
 				  			int choice;
+				  			// TODO: fix counter
 				  			int count = 1;
 				  			while (tmp.equals(state)) {
 				  				choice = random.nextInt(4);
@@ -375,9 +377,70 @@ public class Game2048 extends JPanel {
 			case "Smart":
 				System.out.println("Player uses smart strategy to play");
 				System.out.println("Implement this one for bonus points");
-				System.out.println("Not implemented yet: using manual operation as fallback");
-				// continue in manual mode
-				game2048.manual = true;
+				int smartDelay = 2000;
+				ActionListener smartTaskPerformer = new ActionListener() {
+				      public void actionPerformed(ActionEvent evt) {
+				          if (game2048.gameOver()) {
+				        	  System.out.println("Actionlistener recognizes game is over");
+				        	  ((Timer)evt.getSource()).stop();
+				          }
+				          else {
+				        	GameState smartState = game2048.currentState;
+				  			GameState smartTmp = new State((State)smartState);
+				  			// TODO: fix counter
+				  			int smartCount = 1;
+				  			String selectedMove = "";
+				  			while (smartTmp.equals(smartState)) {
+				  				HashMap<String, Integer> scores = new HashMap<String, Integer>();
+				  				GameState leftState = new State((State)smartState);
+				  				GameState rightState = new State((State)smartState);
+				  				GameState upState = new State((State)smartState);
+				  				GameState downState = new State((State)smartState);
+				  				
+			  					scores.put("left", leftState.left());
+			  					scores.put("right", rightState.right());
+			  					scores.put("up", upState.up());
+			  					scores.put("down", downState.down());
+			  					
+			  					int max = 0;
+			  					for (String move: scores.keySet()) {
+			  						int tempScore = scores.get(move); 
+			  						if (tempScore >= max) {
+			  							max = tempScore;
+			  							selectedMove = move;
+			  						}
+			  					}
+			  					
+			  					switch (selectedMove) {
+			  						case "left":
+					  					game2048.score += smartState.left();
+			  							break;
+			  						case "right":
+					  					game2048.score += smartState.right();
+					  					break;
+			  						case "up":
+					  					game2048.score += smartState.up();
+					  					break;
+			  						case "down":
+					  					game2048.score += smartState.down();
+					  					break;
+			  					}
+			  					
+				  				smartCount++;
+			  					System.out.println("Player: " + selectedMove + ", attempt: " + smartCount);
+				  			}
+				  			// if arrangement of tiles changed, add new tiles as needed
+				  			if (!smartTmp.equals(smartState)) {
+				  				for (int i = 0; i < NUMBER_OF_NEW_TILES; i++) {
+				  					smartState.addTile();
+				  				}
+				  			}
+				  			frame.repaint();
+				          }
+				      }
+				  };
+				final Timer smartTimer = new Timer(smartDelay,smartTaskPerformer);
+				smartTimer.start();
 				break;
 			default:
 				System.out.println("Unknown command line parameter: " + args[0]);
