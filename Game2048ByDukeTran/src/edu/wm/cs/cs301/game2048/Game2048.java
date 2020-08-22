@@ -336,8 +336,8 @@ public class Game2048 extends JPanel {
 				  			// pick a move
 				  			Random random = new Random();
 				  			int choice;
-				  			// TODO: fix counter
 				  			int count = 1;
+				  			System.out.println(count);
 				  			while (tmp.equals(state)) {
 				  				choice = random.nextInt(4);
 				  				switch (choice) {
@@ -387,9 +387,9 @@ public class Game2048 extends JPanel {
 				          else {
 				        	GameState smartState = game2048.currentState;
 				  			GameState smartTmp = new State((State)smartState);
-				  			// TODO: fix counter
 				  			int smartCount = 1;
 				  			String selectedMove = "";
+				  			String triedMove = "";
 				  			while (smartTmp.equals(smartState)) {
 				  				HashMap<String, Integer> scores = new HashMap<String, Integer>();
 				  				GameState leftState = new State((State)smartState);
@@ -405,7 +405,7 @@ public class Game2048 extends JPanel {
 			  					int max = 0;
 			  					for (String move: scores.keySet()) {
 			  						int tempScore = scores.get(move); 
-			  						if (tempScore >= max) {
+			  						if (triedMove != move && tempScore >= max) {
 			  							max = tempScore;
 			  							selectedMove = move;
 			  						}
@@ -425,9 +425,15 @@ public class Game2048 extends JPanel {
 					  					game2048.score += smartState.down();
 					  					break;
 			  					}
+			  					System.out.println("Player: " + selectedMove + ", attempt: " + smartCount);
+			  					
+			  					if (smartTmp.equals(smartState)) {
+			  						triedMove = selectedMove;
+			  					} else {
+			  						triedMove = "";
+			  					}
 			  					
 				  				smartCount++;
-			  					System.out.println("Player: " + selectedMove + ", attempt: " + smartCount);
 				  			}
 				  			// if arrangement of tiles changed, add new tiles as needed
 				  			if (!smartTmp.equals(smartState)) {
