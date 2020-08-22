@@ -71,14 +71,10 @@ public class State implements GameState {
 		for (int x = 0; x < 4; x++) {
 			int compare = getValue(x, 0);
 			for (int y = 1; y < 4; y++) {
-				int tempValue = getValue(x, y); 
-				if (tempValue == compare) {
-					return true;
-				} else if (tempValue == 0) {
-					continue;
-				} else {	
-					compare = tempValue;
-				}
+				int tempValue = getValue(x, y);
+				if (tempValue == 0) continue;
+				else if (tempValue == compare) return true;
+				else compare = tempValue;
 			}
 		}
 		
@@ -86,13 +82,9 @@ public class State implements GameState {
 			int compare = getValue(0, y);
 			for (int x = 1; x < 4; x++) {
 				int tempValue = getValue(x, y); 
-				if (tempValue == compare) {
-					return true;
-				} else if (tempValue == 0) {
-					continue;
-				} else {	
-					compare = tempValue;
-				}
+				if (tempValue == 0) continue;
+				else if (tempValue == compare) return true;
+				else compare = tempValue;
 			}
 		}
 		
@@ -102,11 +94,7 @@ public class State implements GameState {
 	@Override
 	public boolean reachedThreshold() {
 		int max = 0;
-		for (int num: board) {
-			if (num > max) {
-				max = num;
-			}
-		}
+		for (int num: board) if (num > max) max = num;
 		return max >= 2048 ? true : false;
 	}
 
@@ -225,25 +213,108 @@ public class State implements GameState {
 		
 		return score;
 	}
+	
+	public double evaluateState(String direction) {
+		/* New score heuristic */
+		State newState = new State((State)this);
+		int newScore = 0;
+		switch (direction) {
+			case "left":
+				newScore = newState.left();
+				break;
+			case "right":
+				newScore = newState.right();
+				break;
+			case "up":
+				newScore = newState.up();
+				break;
+			case "down":
+				newScore = newState.down();
+				break;
+		}
+		int[] newBoard = newState.board;
+
+		/* Empty spaces heuristic. */
+		int emptySpaces = 0;
+		for (int num: newBoard) emptySpaces += num == 0 ? 1 : 0;
+		
+		/* Positioning heuristic. 
+		 * Reward weighted points if tiles are present in the right column
+		 * and second right column. 
+		 * Weighting graph: 
+		 * 0 1 2 3
+		 * 0 1 2 3
+		 * 0 1 1 3
+		 * 0 0 1 3
+		 */
+		final int[] WEIGHT_GRAPH = new int[] {0,1,2,3,0,1,2,3,0,1,1,3,0,0,1,3};
+		int positioning = 0;
+		for (int idx = 0; idx < newBoard.length; idx++) 
+			if (newBoard[idx] != 0) positioning += WEIGHT_GRAPH[idx];
+		
+		/** Ordering heuristic.
+		 *  Find max and check if max is in the bottom-right corner.
+		 *  Reward points if right most column is full and 
+		 *  in ascending order from top to bottom.
+		 *  Reward points if second to the right column is in 
+		 *  descending order from top to bottom. 
+		 */
+		int ordering = 0;
+		int max = 0;
+		for (int num: newBoard) if (num > max) max = num;
+		if (newState.getValue(3, 3) == max) ordering += 1;
+		for (int y = 0; y < 3; y++) {
+			if (newState.getValue(3, y) <= newState.getValue(3, y + 1)) ordering += 1;
+			if (newState.getValue(2, y) >= newState.getValue(2, y + 1)) ordering += 1; 
+		}
+		
+		/** Potential merges heuristic
+		 * Reward points for creating potential merges.
+		 */
+		int potentialMerges = 0;
+		for (int x = 0; x < 4; x++) {
+			int compare = newState.getValue(x, 0);
+			for (int y = 1; y < 4; y++) {
+				int tempValue = newState.getValue(x, y); 
+				if (tempValue == 0) continue;
+				else if (tempValue == compare) {
+					potentialMerges += 1;
+					compare = 0;
+				}
+				else compare = tempValue;
+			}
+		}
+		for (int y = 0; y < 4; y++) {
+			int compare = newState.getValue(0, y);
+			for (int x = 1; x < 4; x++) {
+				int tempValue = newState.getValue(x, y); 
+				if (tempValue == 0) continue;
+				else if (tempValue == compare) {
+					potentialMerges += 1;
+					compare = 0;
+				}
+				else compare = tempValue;
+			}
+		}
+		
+		/* Average the weighted heuristics. */
+		return ((newScore / 2048) * 50 + positioning * 3 + ordering * 3 + emptySpaces * 1.5 
+				+ potentialMerges * 1.5) / 5;
+	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
 		
 		State compState = (State) obj;
-		if (!Arrays.equals(board, compState.board))
-			return false;
+		if (!Arrays.equals(board, compState.board)) return false;
 		return true;
 	}
 
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Arrays.hashCode(board);
-		return result;
+		return prime * result + Arrays.hashCode(board);
 	}
 }

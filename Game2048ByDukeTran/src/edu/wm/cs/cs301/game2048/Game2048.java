@@ -25,7 +25,6 @@ package edu.wm.cs.cs301.game2048;
 
 import javax.swing.*;
 
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -33,6 +32,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.ArrayList;
 
 /**
  * @author Konstantin Bulenkov
@@ -292,6 +292,59 @@ public class Game2048 extends JPanel {
 	private static int offsetCoors(int arg) {
 		return arg * (TILES_MARGIN + TILE_SIZE) + TILES_MARGIN;
 	}
+	
+	private void makeSmartMove() {
+		GameState smartState = this.currentState;
+		GameState smartTmp = new State((State)smartState);
+		int smartCount = 1;
+		String selectedMove = "";
+		ArrayList<String> triedMoves = new ArrayList<String>();
+		while (smartTmp.equals(smartState)) {
+			HashMap<String, Double> scores = new HashMap<String, Double>();
+			
+			scores.put("left", ((State)smartState).evaluateState("left"));
+			scores.put("right", ((State)smartState).evaluateState("right"));
+			scores.put("up", ((State)smartState).evaluateState("up"));
+			scores.put("down", ((State)smartState).evaluateState("down"));
+			
+			System.out.println(scores);
+			
+			double max = 0;
+			for (String move: scores.keySet()) {
+				double tempScore = scores.get(move); 
+				if (!triedMoves.contains(move) && tempScore >= max) {
+					max = tempScore;
+					selectedMove = move;
+				}
+			}
+			
+			switch (selectedMove) {
+				case "left":
+				this.score += smartState.left();
+					break;
+				case "right":
+				this.score += smartState.right();
+				break;
+				case "up":
+				this.score += smartState.up();
+				break;
+				case "down":
+				this.score += smartState.down();
+				break;
+			}
+			System.out.println("Player: " + selectedMove + ", attempt: " + smartCount);
+			
+			if (smartTmp.equals(smartState)) triedMoves.add(selectedMove);
+			
+			smartCount++;
+		}
+		// if arrangement of tiles changed, add new tiles as needed
+		if (!smartTmp.equals(smartState)) {
+			for (int i = 0; i < NUMBER_OF_NEW_TILES; i++) {
+				smartState.addTile();
+			}
+		}
+	}
 
 	/**
 	 * Main method to start the game
@@ -323,7 +376,7 @@ public class Game2048 extends JPanel {
 			switch (args[0]) {
 			case "Random":
 				System.out.println("Player uses randomized strategy");
-				int delay = 2000;
+				int delay = 1000;
 				ActionListener taskPerformer = new ActionListener() {
 				      public void actionPerformed(ActionEvent evt) {
 				          if (game2048.gameOver()) {
@@ -367,7 +420,6 @@ public class Game2048 extends JPanel {
 				  					state.addTile();
 				  				}
 				  			}
-				  			frame.repaint();
 				          }
 				      }
 				  };
@@ -385,62 +437,7 @@ public class Game2048 extends JPanel {
 				        	  ((Timer)evt.getSource()).stop();
 				          }
 				          else {
-				        	GameState smartState = game2048.currentState;
-				  			GameState smartTmp = new State((State)smartState);
-				  			int smartCount = 1;
-				  			String selectedMove = "";
-				  			String triedMove = "";
-				  			while (smartTmp.equals(smartState)) {
-				  				HashMap<String, Integer> scores = new HashMap<String, Integer>();
-				  				GameState leftState = new State((State)smartState);
-				  				GameState rightState = new State((State)smartState);
-				  				GameState upState = new State((State)smartState);
-				  				GameState downState = new State((State)smartState);
-				  				
-			  					scores.put("left", leftState.left());
-			  					scores.put("right", rightState.right());
-			  					scores.put("up", upState.up());
-			  					scores.put("down", downState.down());
-			  					
-			  					int max = 0;
-			  					for (String move: scores.keySet()) {
-			  						int tempScore = scores.get(move); 
-			  						if (triedMove != move && tempScore >= max) {
-			  							max = tempScore;
-			  							selectedMove = move;
-			  						}
-			  					}
-			  					
-			  					switch (selectedMove) {
-			  						case "left":
-					  					game2048.score += smartState.left();
-			  							break;
-			  						case "right":
-					  					game2048.score += smartState.right();
-					  					break;
-			  						case "up":
-					  					game2048.score += smartState.up();
-					  					break;
-			  						case "down":
-					  					game2048.score += smartState.down();
-					  					break;
-			  					}
-			  					System.out.println("Player: " + selectedMove + ", attempt: " + smartCount);
-			  					
-			  					if (smartTmp.equals(smartState)) {
-			  						triedMove = selectedMove;
-			  					} else {
-			  						triedMove = "";
-			  					}
-			  					
-				  				smartCount++;
-				  			}
-				  			// if arrangement of tiles changed, add new tiles as needed
-				  			if (!smartTmp.equals(smartState)) {
-				  				for (int i = 0; i < NUMBER_OF_NEW_TILES; i++) {
-				  					smartState.addTile();
-				  				}
-				  			}
+				        	game2048.makeSmartMove();
 				  			frame.repaint();
 				          }
 				      }
