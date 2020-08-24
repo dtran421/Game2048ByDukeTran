@@ -293,6 +293,12 @@ public class Game2048 extends JPanel {
 		return arg * (TILES_MARGIN + TILE_SIZE) + TILES_MARGIN;
 	}
 	
+	/* Main method for the smart strategy.
+	 * Instead of using the minimax or expectimax algorithms,
+	 * I decided to just use a rudimentary approach with
+	 * heuristics that evaluate the most optimal next
+	 * state produced by the four possible moves.
+	 */
 	private void makeSmartMove() {
 		GameState smartState = this.currentState;
 		GameState smartTmp = new State((State)smartState);
@@ -306,9 +312,7 @@ public class Game2048 extends JPanel {
 			scores.put("right", ((State)smartState).evaluateState("right"));
 			scores.put("up", ((State)smartState).evaluateState("up"));
 			scores.put("down", ((State)smartState).evaluateState("down"));
-			
-			System.out.println(scores);
-			
+						
 			double max = Double.NEGATIVE_INFINITY;
 			for (String move: scores.keySet()) {
 				double tempScore = scores.get(move); 
@@ -437,6 +441,7 @@ public class Game2048 extends JPanel {
 				        	  ((Timer)evt.getSource()).stop();
 				          }
 				          else {
+				        	// main method to evaluate the next move
 				        	game2048.makeSmartMove();
 				  			frame.repaint();
 				          }
