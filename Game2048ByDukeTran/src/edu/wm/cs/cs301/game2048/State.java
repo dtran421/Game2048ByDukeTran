@@ -215,24 +215,35 @@ public class State implements GameState {
 	}
 	
 	public double evaluateState(String direction) {
+		final double SCORE_COEFFICIENT = 1.25;
+		final double ORDERING_COEFFICIENT = 2;
+		final double SPACES_COEFFICIENT = 7;
+		final double MERGE_COEFFICIENT = 3;
+		
+		double penalty = 0;
+		
 		/* New score heuristic */
 		State newState = new State((State)this);
-		int newScore = 0;
+		double newScore = 0;
+		double tempScore = 0;
 		switch (direction) {
 			case "left":
-				newScore = newState.left();
+				tempScore = newState.left() * 1.1;
 				break;
 			case "right":
-				newScore = newState.right();
+				tempScore = newState.right() * 1.25; 
 				break;
 			case "up":
-				newScore = newState.up();
+				tempScore = newState.up();
 				break;
 			case "down":
-				newScore = newState.down();
+				tempScore = newState.down() * 1.5;
 				break;
 		}
 		int[] newBoard = newState.board;
+		int max = 0;
+		for (int num: newBoard) if (num > max) max = num;
+		newScore = Math.log(2048) / Math.log(tempScore) * 1.5;
 
 		/* Empty spaces heuristic. */
 		int emptySpaces = 0;
@@ -242,30 +253,35 @@ public class State implements GameState {
 		 * Reward weighted points if tiles are present in the right column
 		 * and second right column. 
 		 * Weighting graph: 
-		 * 0 1 2 3
-		 * 0 1 2 3
-		 * 0 1 1 3
-		 * 0 0 1 3
+		 * 0 2 5 7
+		 * 0 2 4 7
+		 * 1 2 3 7
+		 * 0 1 2 10
 		 */
-		final int[] WEIGHT_GRAPH = new int[] {0,1,2,3,0,1,2,3,0,1,1,3,0,0,1,3};
+		final int[] WEIGHT_GRAPH = new int[] {0,2,5,7,0,2,4,7,1,2,3,7,0,1,2,10};
 		int positioning = 0;
 		for (int idx = 0; idx < newBoard.length; idx++) 
 			if (newBoard[idx] != 0) positioning += WEIGHT_GRAPH[idx];
 		
 		/** Ordering heuristic.
-		 *  Find max and check if max is in the bottom-right corner.
+		 *  Check if max is in the bottom-right corner.
 		 *  Reward points if right most column is full and 
 		 *  in ascending order from top to bottom.
 		 *  Reward points if second to the right column is in 
 		 *  descending order from top to bottom. 
 		 */
 		int ordering = 0;
-		int max = 0;
-		for (int num: newBoard) if (num > max) max = num;
-		if (newState.getValue(3, 3) == max) ordering += 1;
+		int orderedMax = 0;
+		if (newState.getValue(3, 3) == max) orderedMax = 60;
+		else penalty += 120;
 		for (int y = 0; y < 3; y++) {
-			if (newState.getValue(3, y) <= newState.getValue(3, y + 1)) ordering += 1;
-			if (newState.getValue(2, y) >= newState.getValue(2, y + 1)) ordering += 1; 
+			if (newState.getValue(3, y) <= newState.getValue(3, y + 1)) ordering += 7;
+			else penalty += 9 * (4 - (y + 1)) * ORDERING_COEFFICIENT;
+			if (newState.getValue(2, y) >= newState.getValue(2, y + 1)) ordering += 3;
+			else penalty += 5 * (4 - (y + 1)) * ORDERING_COEFFICIENT;
+			if (y == 0 && newState.getValue(2, y) != 0 && 
+				newState.getValue(2, y) <= newState.getValue(3, y)) ordering += 5;
+			else penalty += 7 * ORDERING_COEFFICIENT;
 		}
 		
 		/** Potential merges heuristic
@@ -297,9 +313,13 @@ public class State implements GameState {
 			}
 		}
 		
-		/* Average the weighted heuristics. */
-		return ((newScore / 2048) * 50 + positioning * 3 + ordering * 3 + emptySpaces * 1.5 
-				+ potentialMerges * 1.5) / 5;
+		System.out.printf("%s %s %s %s\n", positioning,
+				ordering * ORDERING_COEFFICIENT, orderedMax, 
+				emptySpaces * SPACES_COEFFICIENT);
+		/* Sum the weighted heuristics. */
+		return newScore + ordering * ORDERING_COEFFICIENT + orderedMax + 
+			(emptySpaces > 8 ? emptySpaces * (SPACES_COEFFICIENT / 2) 
+			: emptySpaces * SPACES_COEFFICIENT) - penalty;
 	}
 
 	public boolean equals(Object obj) {

@@ -309,7 +309,7 @@ public class Game2048 extends JPanel {
 			
 			System.out.println(scores);
 			
-			double max = 0;
+			double max = Double.NEGATIVE_INFINITY;
 			for (String move: scores.keySet()) {
 				double tempScore = scores.get(move); 
 				if (!triedMoves.contains(move) && tempScore >= max) {
@@ -320,17 +320,17 @@ public class Game2048 extends JPanel {
 			
 			switch (selectedMove) {
 				case "left":
-				this.score += smartState.left();
+					this.score += smartState.left();
 					break;
 				case "right":
-				this.score += smartState.right();
-				break;
+					this.score += smartState.right();
+					break;
 				case "up":
-				this.score += smartState.up();
-				break;
+					this.score += smartState.up();
+					break;
 				case "down":
-				this.score += smartState.down();
-				break;
+					this.score += smartState.down();
+					break;
 			}
 			System.out.println("Player: " + selectedMove + ", attempt: " + smartCount);
 			
@@ -376,7 +376,7 @@ public class Game2048 extends JPanel {
 			switch (args[0]) {
 			case "Random":
 				System.out.println("Player uses randomized strategy");
-				int delay = 1000;
+				int delay = 2000;
 				ActionListener taskPerformer = new ActionListener() {
 				      public void actionPerformed(ActionEvent evt) {
 				          if (game2048.gameOver()) {
@@ -429,7 +429,7 @@ public class Game2048 extends JPanel {
 			case "Smart":
 				System.out.println("Player uses smart strategy to play");
 				System.out.println("Implement this one for bonus points");
-				int smartDelay = 2000;
+				int smartDelay = 750;
 				ActionListener smartTaskPerformer = new ActionListener() {
 				      public void actionPerformed(ActionEvent evt) {
 				          if (game2048.gameOver()) {
